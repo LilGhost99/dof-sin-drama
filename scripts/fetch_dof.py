@@ -18,6 +18,7 @@ import re
 import sys
 import time
 import unicodedata
+import urllib.error
 import urllib.request
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -161,16 +162,28 @@ def clasificar(titulo, dependencia_texto, es_aviso=False):
     return encontrados or ["otros"]
 
 
-def pedir_json(url, intentos=4):
+def pedir_json(url, intentos=3):
+    """Lee un JSON de SIDOF. Prueba varias combinaciones de cabeceras porque
+    el servicio responde 406 si no le gusta alguna."""
+    variantes = [
+        {"User-Agent": UA},
+        {"User-Agent": UA, "Accept": "*/*"},
+        {"User-Agent": "Mozilla/5.0 (compatible; dof-sin-drama/1.0)", "Accept": "application/json, text/plain, */*"},
+    ]
     ultimo = None
     for i in range(intentos):
-        try:
-            req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/json"})
-            with urllib.request.urlopen(req, timeout=30) as r:
-                return json.loads(r.read().decode("utf-8"))
-        except Exception as e:  # noqa: BLE001
-            ultimo = e
-            time.sleep(2 * (i + 1))
+        for cab in variantes:
+            try:
+                req = urllib.request.Request(url, headers=cab)
+                with urllib.request.urlopen(req, timeout=30) as r:
+                    return json.loads(r.read().decode("utf-8"))
+            except urllib.error.HTTPError as e:
+                ultimo = e
+                if e.code in (404,):
+                    raise RuntimeError(f"No encontrado: {url}")
+            except Exception as e:  # noqa: BLE001
+                ultimo = e
+        time.sleep(3 * (i + 1))
     raise RuntimeError(f"No se pudo leer {url}: {ultimo}")
 
 
@@ -327,6 +340,9 @@ def main():
         except RuntimeError as e:
             errores += 1
             print(f"{dia}: ERROR {e}", file=sys.stderr)
+            if errores >= 3 and not any(carpeta.glob("20*.json")):
+                print("Demasiados errores seguidos: se detiene para no gastar minutos.", file=sys.stderr)
+                break
         time.sleep(0.5)
     reconstruir_indices(carpeta)
     return 1 if errores else 0
