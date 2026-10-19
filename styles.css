@@ -1,0 +1,62 @@
+:root{
+  --bg:#F4F6F9; --surface:#FFFFFF; --ink:#101828; --muted:#566074; --line:#D9DEE7;
+  --accent:#1B5FD1; --accent-ink:#FFFFFF; --focus:#1B5FD1;
+}
+:root[data-theme="dark"]{
+  --bg:#0D121A; --surface:#151B26; --ink:#E8ECF3; --muted:#9AA5B8; --line:#273044;
+  --accent:#7FA8FF; --accent-ink:#0D121A; --focus:#9DBBFF;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D121A; --surface:#151B26; --ink:#E8ECF3; --muted:#9AA5B8; --line:#273044;
+    --accent:#7FA8FF; --accent-ink:#0D121A; --focus:#9DBBFF;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:-999px}.skip:focus{left:8px;top:8px;background:var(--surface);padding:8px 12px;z-index:9}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:6px}
+.muted{color:var(--muted)}
+
+.top{border-bottom:1px solid var(--line);background:var(--surface)}
+.top .wrap{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-top:20px;padding-bottom:18px}
+h1{margin:0;font:700 clamp(1.7rem,5vw,2.4rem)/1.1 Georgia,"Times New Roman",serif;letter-spacing:-.01em}
+h1 em{font-style:italic;color:var(--accent)}
+.brand p{margin:6px 0 0;color:var(--muted);max-width:52ch}
+
+.controls{display:grid;gap:14px;padding:18px 0 6px}
+.datebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input[type=date],input[type=search]{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px}
+input[type=search]{width:100%}
+.ghost{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;min-height:44px;min-width:44px;padding:0 14px;cursor:pointer}
+.ghost:hover{border-color:var(--accent)}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button,.chip{font:inherit;font-size:.92rem;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;min-height:36px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:inline-flex;gap:6px;align-items:center}
+.chip i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.chip b{font-weight:600;color:var(--muted);font-size:.85em}
+.chip[aria-pressed=true]{border-color:var(--c);box-shadow:inset 0 0 0 1px var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.check{display:flex;gap:8px;align-items:center;font-size:.92rem;color:var(--muted)}
+.check input{width:18px;height:18px}
+
+.estado{margin:14px 0 8px;color:var(--muted);font-size:.95rem}
+.lista{list-style:none;margin:0;padding:0 0 40px;display:grid;gap:10px}
+.nota{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--c,var(--line));border-radius:12px;padding:14px 16px}
+.nota h2{margin:0 0 6px;font:600 1.02rem/1.35 system-ui,sans-serif}
+.meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:.85rem;color:var(--muted)}
+.tag{display:inline-block;padding:1px 8px;border-radius:999px;border:1px solid var(--c);color:var(--ct);font-size:.78rem}
+.nota a.leer{display:inline-block;margin-top:10px;font-weight:600;color:var(--accent);text-decoration:none;border-bottom:2px solid currentColor}
+.nota a.leer:hover{opacity:.8}
+.resumen{margin-top:10px;display:grid;gap:8px}
+.resumen div{padding:10px 12px;border-radius:8px;background:var(--bg);font-size:.95rem}
+.resumen strong{display:block;font-size:.8rem;color:var(--muted);margin-bottom:2px}
+.fecha-hit{font-variant-numeric:tabular-nums}
+
+.foot{border-top:1px solid var(--line);background:var(--surface);padding:22px 0 30px;font-size:.88rem}
+.foot p{margin:0 0 8px;max-width:70ch}
+@media (prefers-reduced-motion:no-preference){.nota{transition:border-color .15s}}

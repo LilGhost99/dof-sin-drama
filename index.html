@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>El DOF sin drama</title>
+<meta name="description" content="El Diario Oficial de la Federación del día, ordenado por tema y fácil de leer. Gratis.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#lista">Saltar a las publicaciones</a>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1>El DOF <em>sin drama</em></h1>
+      <p>Lo que se publicó hoy, ordenado por tema. Cada nota enlaza al texto oficial.</p>
+    </div>
+    <button id="tema" class="ghost" type="button" aria-label="Cambiar entre modo claro y oscuro">◐</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="controls" aria-label="Filtros">
+    <div class="datebar">
+      <button id="prev" class="ghost" type="button" aria-label="Día anterior">←</button>
+      <label class="datepick"><span class="sr">Fecha</span><input id="fecha" type="date"></label>
+      <button id="next" class="ghost" type="button" aria-label="Día siguiente">→</button>
+      <button id="hoy" class="ghost" type="button">Hoy</button>
+    </div>
+    <div class="searchbar">
+      <label class="sr" for="q">Buscar en las últimas publicaciones</label>
+      <input id="q" type="search" placeholder="Buscar: arancel, convocatoria, NOM, Banxico…" autocomplete="off">
+    </div>
+    <div id="ediciones" class="seg" role="group" aria-label="Edición"></div>
+    <div id="chips" class="chips" role="group" aria-label="Temas"></div>
+    <label class="check"><input id="avisos" type="checkbox"> Mostrar avisos judiciales y generales <span id="avn" class="muted"></span></label>
+  </section>
+
+  <p id="estado" class="estado" role="status" aria-live="polite"></p>
+  <ol id="lista" class="lista"></ol>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p><strong>Resumen informativo, no asesoría legal.</strong> Esta página ordena el sumario que publica la Secretaría de Gobernación (SIDOF). El único texto con validez es el del Diario Oficial de la Federación: usa siempre el enlace “Leer en el DOF”. Los temas se asignan automáticamente por palabras clave y pueden fallar.</p>
+    <p class="muted">Proyecto estudiantil, sin fines de lucro y sin relación con el Gobierno de México. <span id="act"></span></p>
+  </div>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>
