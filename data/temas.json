@@ -1,0 +1,93 @@
+[
+ {
+  "id": "comercio",
+  "label": "Comercio exterior",
+  "color": "#1B5FD1",
+  "color_dark": "#7FA8FF"
+ },
+ {
+  "id": "compras",
+  "label": "Compras de gobierno",
+  "color": "#B24A12",
+  "color_dark": "#FF9A62"
+ },
+ {
+  "id": "normas",
+  "label": "Normas oficiales (NOM)",
+  "color": "#6B46C1",
+  "color_dark": "#B79CFF"
+ },
+ {
+  "id": "fiscal",
+  "label": "Impuestos",
+  "color": "#8A6A00",
+  "color_dark": "#E8C34E"
+ },
+ {
+  "id": "agro",
+  "label": "Campo",
+  "color": "#2E7D32",
+  "color_dark": "#7AD07F"
+ },
+ {
+  "id": "economia",
+  "label": "Indicadores y finanzas",
+  "color": "#0F766E",
+  "color_dark": "#5CD6C8"
+ },
+ {
+  "id": "trabajo",
+  "label": "Trabajo y seguridad social",
+  "color": "#B0357A",
+  "color_dark": "#F58AC0"
+ },
+ {
+  "id": "salud",
+  "label": "Salud",
+  "color": "#C0392B",
+  "color_dark": "#FF8A7A"
+ },
+ {
+  "id": "educacion",
+  "label": "Educación y ciencia",
+  "color": "#3949AB",
+  "color_dark": "#9DA8FF"
+ },
+ {
+  "id": "energia",
+  "label": "Energía y combustibles",
+  "color": "#9A5B00",
+  "color_dark": "#F0B866"
+ },
+ {
+  "id": "ambiente",
+  "label": "Medio ambiente y agua",
+  "color": "#3F7D58",
+  "color_dark": "#8FD6AC"
+ },
+ {
+  "id": "justicia",
+  "label": "Justicia y tribunales",
+  "color": "#5C6370",
+  "color_dark": "#B4BCC9"
+ },
+ {
+  "id": "electoral",
+  "label": "Elecciones",
+  "color": "#A33A3A",
+  "color_dark": "#F29A9A"
+ },
+ {
+  "id": "otros",
+  "label": "Otras publicaciones",
+  "color": "#6B7280",
+  "color_dark": "#A7B0BD"
+ },
+ {
+  "id": "avisos",
+  "label": "Avisos judiciales y generales",
+  "color": "#6B7280",
+  "color_dark": "#A7B0BD",
+  "oculto": true
+ }
+]
