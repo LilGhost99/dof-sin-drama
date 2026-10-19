@@ -32,6 +32,7 @@ MAX_TEXTOS_POR_CORRIDA = 400
 _textos_pedidos = 0
 DIAS_EN_INDICE = 400
 DIAS_EN_BUSCADOR = 180
+DIAS_CON_TEXTO = 365  # los textos más viejos se borran para que el sitio no crezca sin límite
 
 EDICIONES = [("NotasMatutinas", "MAT"), ("NotasVespertinas", "VES"), ("NotasExtraordinarias", "EXT")]
 
@@ -353,6 +354,31 @@ def guardar_dia(carpeta, fecha, notas, ediciones):
     }
     ruta.write_text(json.dumps(contenido, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     return True
+
+
+def limpiar_textos_viejos(carpeta, hoy):
+    """Borra los textos de notas con más de DIAS_CON_TEXTO días y quita su marca "texto"."""
+    textos = carpeta / "notas"
+    if not textos.exists():
+        return
+    limite = hoy - timedelta(days=DIAS_CON_TEXTO)
+    conservar, borrados = set(), 0
+    for ruta in sorted(carpeta.glob("*.json")):
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}\.json", ruta.name):
+            continue
+        dia = json.loads(ruta.read_text(encoding="utf-8"))
+        if date.fromisoformat(dia["fecha"]) >= limite:
+            conservar.update(n["id"] for n in dia["notas"])
+        elif any(n.get("texto") for n in dia["notas"]):
+            for n in dia["notas"]:
+                n.pop("texto", None)
+            ruta.write_text(json.dumps(dia, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    for ruta in textos.glob("*.json"):
+        if ruta.stem.isdigit() and int(ruta.stem) not in conservar:
+            ruta.unlink()
+            borrados += 1
+    if borrados:
+        print(f"Se borraron {borrados} textos de más de {DIAS_CON_TEXTO} días.")
 
 
 def reconstruir_indices(carpeta):
