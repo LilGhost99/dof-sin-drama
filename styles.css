@@ -90,7 +90,8 @@ button{font-family:inherit}
 .fila h3{margin:0;font:500 1.12rem/1.42 var(--lectura);max-width:60ch;text-wrap:pretty;hyphens:manual}
 .fila h3 a{color:inherit;text-decoration:none}
 .fila h3 a::after{content:"";position:absolute;inset:0}
-.fila:hover h3 a,.fila h3 a:focus-visible{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px;text-decoration-color:var(--sello)}
+@media (hover:hover){.fila:hover h3 a{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px;text-decoration-color:var(--sello)}}
+.fila h3 a:focus-visible{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px;text-decoration-color:var(--sello)}
 .fila h3 a:focus-visible{outline-offset:6px}
 .meta{margin:8px 0 0;display:flex;flex-wrap:wrap;gap:2px 12px;font-size:.88rem;color:var(--muted)}
 .meta .ext{margin-left:auto;display:inline-flex;align-items:center;gap:4px;color:var(--sello);font-weight:600}
@@ -197,3 +198,33 @@ body.leyendo .abajo{display:none}
 .muestra{font-size:1.5rem;font-weight:700;line-height:1}
 .hoja-muestra{margin:20px 0 0;padding:14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font:500 1.12rem/1.45 var(--lectura)}
 .lector-bar .aa{width:44px;height:40px;font-size:.95rem}
+
+/* ================= v4: cabecera centrada, sumario y buscador ================= */
+.masthead .marca{justify-content:center;margin:2px 0 4px;font-size:1.08rem}
+.masthead{padding-top:max(14px,env(safe-area-inset-top))}
+
+.sumario{margin:20px 0 6px;padding:16px 16px 6px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
+.sumario h2{margin:0 0 12px;font:700 1.05rem/1.2 var(--ui)}
+.tira{display:flex;gap:3px;height:12px;border-radius:6px;overflow:hidden}
+.tira i{flex-basis:0;min-width:6px;background:var(--c)}
+.indice{list-style:none;margin:10px 0 0;padding:0}
+.indice button{display:flex;align-items:baseline;gap:10px;width:100%;min-height:44px;padding:10px 0;border:0;background:none;color:var(--ink);font:500 1rem/1.25 var(--ui);text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.indice li+li button{border-top:1px solid var(--line)}
+.indice i{flex:none;align-self:center;width:11px;height:11px;border-radius:3px;background:var(--c)}
+.indice .et{flex:none;max-width:70%}
+.indice .puntos{flex:1;min-width:12px;border-bottom:2px dotted var(--line);transform:translateY(-4px)}
+.indice b{flex:none;font-weight:700;font-variant-numeric:tabular-nums}
+.indice button:active .et{color:var(--sello)}
+
+/* encabezados de sección pegados arriba al hacer scroll */
+.grupo>h2{position:sticky;top:0;z-index:5;margin:0 -18px;padding:12px 18px 10px;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.grupo{margin-top:14px;scroll-margin-top:0}
+
+/* buscador */
+#buscador .lector-bar{gap:6px;padding-right:12px}
+#buscador .buscar{flex:1}
+#buscador .buscar input{min-height:44px}
+.sugerencias{display:flex;flex-wrap:wrap;gap:8px;padding:16px 0 4px}
+.sugerencias[hidden]{display:none}
+.sugerencias button{min-height:40px;padding:0 14px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:500 .95rem var(--ui);cursor:pointer}
+#buscador .grupo{margin-top:4px}

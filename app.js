@@ -2,7 +2,7 @@
   "use strict";
   const $ = (id) => document.getElementById(id);
   const ED = { MAT: "Matutina", VES: "Vespertina", EXT: "Extraordinaria" };
-  const estado = { temas: [], idx: null, dia: null, fecha: null, tema: "todos", ed: "todas", avisos: false, q: "", busq: null };
+  const estado = { temas: [], idx: null, dia: null, fecha: null, avisos: false, q: "", busq: null };
 
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch { return null; } },
@@ -64,50 +64,9 @@
     estado.dia = null;
     $("fecha").value = iso;
     try { estado.dia = await json(`data/${iso}.json`); } catch { estado.dia = null; }
-    estado.ed = "todas";
-    estado.tema = "todos";
     $("next").disabled = iso >= hoyCDMX();
     pintarSello(estado.dia ? estado.dia.notas.filter((n) => !n.aviso).length : 0);
     pintar();
-  }
-
-  const baseDia = () => (estado.dia ? estado.dia.notas.filter((n) => estado.ed === "todas" || n.edicion === estado.ed) : []);
-
-  function pintarControles() {
-    const visibles = baseDia().filter((n) => !n.aviso);
-    const conteo = {};
-    visibles.forEach((n) => n.temas.forEach((t) => { conteo[t] = (conteo[t] || 0) + 1; }));
-    if (estado.tema !== "todos" && !conteo[estado.tema]) estado.tema = "todos";
-
-    const chips = $("chips");
-    const scroll = chips.scrollLeft;
-    chips.replaceChildren();
-    const mk = (id, label, c, n) => {
-      const b = el("button", { type: "button", className: "chip" });
-      if (c) { const i = el("i"); i.style.setProperty("--c", c); b.append(i); }
-      b.append(label, el("b", { textContent: n }));
-      b.setAttribute("aria-pressed", String(estado.tema === id));
-      b.addEventListener("click", () => { estado.tema = id; pintar(); scrollTo({ top: Math.max(0, document.querySelector(".herramientas").offsetTop - 60), behavior: "smooth" }); });
-      return b;
-    };
-    chips.append(mk("todos", "Todo", null, visibles.length));
-    estado.temas.filter((t) => !t.oculto && conteo[t.id]).forEach((t) => chips.append(mk(t.id, t.label, col(t), conteo[t.id])));
-    chips.scrollLeft = scroll;
-
-    const eds = $("ediciones");
-    eds.replaceChildren();
-    const d = estado.dia;
-    if (d) {
-      const disp = Object.keys(ED).filter((k) => d.ed[k]);
-      if (disp.length > 1) {
-        [["todas", "Todas"], ...disp.map((k) => [k, ED[k]])].forEach(([k, label]) => {
-          const b = el("button", { type: "button", textContent: label });
-          b.setAttribute("aria-pressed", String(estado.ed === k));
-          b.addEventListener("click", () => { estado.ed = k; pintar(); });
-          eds.append(b);
-        });
-      }
-    }
   }
 
   function fila(n, iso, opciones = {}) {
@@ -124,8 +83,8 @@
     const meta = el("p", { className: "meta" });
     if (opciones.fecha) meta.append(el("span", { className: "fecha-hit", textContent: fechaDe(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" }) }));
     if (n.dep) meta.append(el("span", { textContent: n.dep }));
-    if (n.pagina) meta.append(el("span", { textContent: `pág. ${n.pagina}` }));
-    const extra = n.temas.filter((x) => x !== opciones.grupo && x !== "otros" && x !== "avisos");
+    if (n.edicion === "VES" || n.edicion === "EXT") meta.append(el("span", { textContent: ED[n.edicion] }));
+    const extra = (n.temas || []).filter((x) => x !== opciones.grupo && x !== "otros" && x !== "avisos");
     if (extra.length) {
       const o = el("span", { className: "otros" });
       extra.forEach((x) => o.append(el("span", { textContent: temaPorId(x).label })));
@@ -145,7 +104,7 @@
 
   function grupo(id, notas, iso) {
     const t = temaPorId(id);
-    const sec = el("section", { className: "grupo" });
+    const sec = el("section", { className: "grupo", id: "tema-" + id });
     const h = el("h2", {}, el("i"), t.label, el("span", { textContent: notas.length }));
     h.querySelector("i").style.setProperty("--c", col(t));
     sec.append(h);
@@ -153,54 +112,75 @@
     return sec;
   }
 
-  function botonAvisos() {
-    const b = $("avisos");
-    const av = estado.dia ? baseDia().filter((n) => n.aviso).length : 0;
-    b.hidden = !av || estado.q.trim().length >= 2;
-    b.textContent = estado.avisos ? "Ocultar avisos judiciales y generales" : `Mostrar ${plural(av, "aviso judicial o general", "avisos judiciales y generales")}`;
-  }
-
-  async function pintarBusqueda() {
-    const lista = $("lista");
-    lista.replaceChildren();
-    if (!estado.busq) { try { estado.busq = await json("data/search.json"); } catch { estado.busq = []; } }
-    const palabras = sinAcentos(estado.q).split(/\s+/).filter(Boolean);
-    const hits = estado.busq.filter((n) => palabras.every((p) => sinAcentos(n.t + " " + n.d).includes(p)) && (estado.tema === "todos" || n.tm.includes(estado.tema)))
-      .sort((a, b) => (a.f < b.f ? 1 : -1));
-    $("estado").textContent = hits.length
-      ? `${plural(hits.length, "resultado", "resultados")} en las últimas publicaciones${hits.length > 100 ? " (se muestran 100)" : ""}.`
-      : "No hay resultados. Prueba con una sola palabra, por ejemplo “arancel”.";
-    const sec = el("section", { className: "grupo" });
-    hits.slice(0, 100).forEach((h) => sec.append(fila({ id: h.i, titulo: h.t, dep: h.d, temas: h.tm, texto: !!h.x }, h.f, { fecha: true })));
-    lista.append(sec);
+  // Sumario: barra proporcional + índice con puntos guía, como el sumario impreso del DOF
+  function pintarSumario(grupos) {
+    const total = grupos.reduce((s, g) => s + g.notas.length, 0);
+    $("sumario").hidden = !total;
+    const tira = $("tira"), ind = $("indice");
+    tira.replaceChildren(); ind.replaceChildren();
+    grupos.forEach(({ t, notas }) => {
+      const seg = el("i"); seg.style.setProperty("--c", col(t)); seg.style.flexGrow = notas.length;
+      tira.append(seg);
+      const b = el("button", { type: "button" }, el("i"), el("span", { className: "et", textContent: t.label }), el("span", { className: "puntos" }), el("b", { textContent: notas.length }));
+      b.querySelector("i").style.setProperty("--c", col(t));
+      b.addEventListener("click", () => {
+        const dest = $("tema-" + t.id);
+        if (dest) scrollTo({ top: dest.getBoundingClientRect().top + scrollY - 8, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      });
+      ind.append(el("li", {}, b));
+    });
   }
 
   function pintar() {
-    pintarControles();
-    botonAvisos();
-    if (estado.q.trim().length >= 2) { pintarBusqueda(); return; }
     const lista = $("lista");
     lista.replaceChildren();
+    const av = estado.dia ? estado.dia.notas.filter((n) => n.aviso) : [];
+    const bAv = $("avisos");
+    bAv.hidden = !av.length;
+    bAv.textContent = estado.avisos ? "Ocultar avisos judiciales y generales" : `Mostrar ${plural(av.length, "aviso judicial o general", "avisos judiciales y generales")}`;
     if (!estado.dia) {
+      pintarSumario([]);
       $("estado").textContent = "No hay publicaciones guardadas para este día. Puede ser fin de semana, día inhábil o que el diario aún no sale.";
       return;
     }
-    const notas = baseDia().filter((n) => estado.avisos || !n.aviso);
-    const principales = notas.filter((n) => !n.aviso);
     $("estado").textContent = "";
-    if (estado.tema === "todos") {
-      const porTema = {};
-      principales.forEach((n) => { (porTema[n.temas[0]] = porTema[n.temas[0]] || []).push(n); });
-      estado.temas.filter((t) => !t.oculto && porTema[t.id]).forEach((t) => lista.append(grupo(t.id, porTema[t.id], estado.fecha)));
-    } else {
-      lista.append(grupo(estado.tema, principales.filter((n) => n.temas.includes(estado.tema)), estado.fecha));
-    }
-    if (estado.avisos) {
-      const av = notas.filter((n) => n.aviso);
-      if (av.length) lista.append(grupo("avisos", av, estado.fecha));
-    }
+    const porTema = {};
+    estado.dia.notas.filter((n) => !n.aviso).forEach((n) => { (porTema[n.temas[0]] = porTema[n.temas[0]] || []).push(n); });
+    const grupos = estado.temas.filter((t) => !t.oculto && porTema[t.id]).map((t) => ({ t, notas: porTema[t.id] }));
+    pintarSumario(grupos);
+    grupos.forEach(({ t, notas }) => lista.append(grupo(t.id, notas, estado.fecha)));
+    if (estado.avisos && av.length) lista.append(grupo("avisos", av, estado.fecha));
   }
 
+  // ---- Buscador a pantalla completa ----
+  const SUGERENCIAS = ["arancel", "cuota compensatoria", "importación", "NOM", "tipo de cambio", "Prosec", "licitación", "estímulo fiscal"];
+  async function pintarBusqueda() {
+    const res = $("resultados"), est = $("b-estado"), sug = $("sugerencias");
+    res.replaceChildren();
+    if (!estado.busq) { try { estado.busq = await json("data/search.json"); } catch { estado.busq = []; } }
+    const q = estado.q.trim();
+    sug.hidden = q.length >= 2;
+    if (q.length < 2) { est.textContent = "Busca en las publicaciones de los últimos seis meses."; return; }
+    const palabras = sinAcentos(q).split(/\s+/).filter(Boolean);
+    const hits = estado.busq.filter((n) => palabras.every((p) => sinAcentos(n.t + " " + n.d).includes(p))).sort((a, b) => (a.f < b.f ? 1 : -1));
+    est.textContent = hits.length
+      ? `${plural(hits.length, "resultado", "resultados")}${hits.length > 100 ? " (se muestran los 100 más recientes)" : ""}.`
+      : "No hay resultados. Prueba con una sola palabra, por ejemplo “arancel”.";
+    const sec = el("section", { className: "grupo" });
+    hits.slice(0, 100).forEach((h) => sec.append(fila({ id: h.i, titulo: h.t, dep: h.d, temas: h.tm, texto: !!h.x }, h.f, { fecha: true })));
+    res.append(sec);
+  }
+  SUGERENCIAS.forEach((w) => {
+    const b = el("button", { type: "button", textContent: w });
+    b.addEventListener("click", () => { $("q").value = w; estado.q = w; pintarBusqueda(); });
+    $("sugerencias").append(b);
+  });
+  function abrirBuscador() {
+    $("buscador").hidden = false; document.body.classList.add("leyendo");
+    pintarBusqueda(); $("q").focus();
+  }
+  function cerrarBuscador() { $("buscador").hidden = true; if ($("lector").hidden) document.body.classList.remove("leyendo"); }
+  $("b-cerrar").addEventListener("click", cerrarBuscador);
 
   // ---- Vista de lectura ----
   function aviso(msg) {
@@ -240,7 +220,7 @@
     }
   }
   function cerrarLector() {
-    $("lector").hidden = true; document.body.classList.remove("leyendo");
+    $("lector").hidden = true; if ($("buscador").hidden) document.body.classList.remove("leyendo");
     document.title = "El DOF sin drama";
   }
   function leerHash() {
@@ -254,7 +234,7 @@
   });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    if (!$("ajustes").hidden) cerrarAjustes(); else if (!$("lector").hidden) $("cerrar").click();
+    if (!$("ajustes").hidden) cerrarAjustes(); else if (!$("lector").hidden) $("cerrar").click(); else if (!$("buscador").hidden) cerrarBuscador();
   });
   $("compartir").addEventListener("click", async () => {
     const datos = { title: $("l-titulo").textContent, text: $("l-titulo").textContent + " (vía El DOF sin drama)", url: location.href };
@@ -277,8 +257,8 @@
   let toque = null;
   document.addEventListener("touchstart", (e) => {
     const t = e.touches[0];
-    if (e.touches.length !== 1 || !$("lector").hidden || !$("ajustes").hidden) { toque = null; return; }
-    if (e.target.closest(".chips, .tabla, input, .abajo") || t.clientX < 28 || t.clientX > innerWidth - 28) { toque = null; return; }
+    if (e.touches.length !== 1 || !$("lector").hidden || !$("ajustes").hidden || !$("buscador").hidden) { toque = null; return; }
+    if (e.target.closest(".tabla, input, .abajo") || t.clientX < 28 || t.clientX > innerWidth - 28) { toque = null; return; }
     toque = { x: t.clientX, y: t.clientY, t: Date.now() };
   }, { passive: true });
   document.addEventListener("touchend", (e) => {
@@ -299,14 +279,11 @@
     if (!hay && destino !== hoy) aviso("El diario de hoy aún no sale. Te muestro el último publicado.");
     scrollTo({ top: 0, behavior: "smooth" });
   });
-  $("ir-buscar").addEventListener("click", () => {
-    const q = $("q"); q.focus({ preventScroll: true });
-    scrollTo({ top: Math.max(0, document.querySelector(".herramientas").offsetTop - 70), behavior: "smooth" });
-  });
+  $("ir-buscar").addEventListener("click", abrirBuscador);
   $("fecha").addEventListener("change", (e) => e.target.value && cargarDia(e.target.value));
   $("avisos").addEventListener("click", () => { estado.avisos = !estado.avisos; pintar(); });
   let t0;
-  $("q").addEventListener("input", (e) => { clearTimeout(t0); t0 = setTimeout(() => { estado.q = e.target.value; pintar(); }, 200); });
+  $("q").addEventListener("input", (e) => { clearTimeout(t0); t0 = setTimeout(() => { estado.q = e.target.value; pintarBusqueda(); }, 200); });
 
   (async () => {
     try { estado.temas = await json("data/temas.json"); } catch { estado.temas = []; }
