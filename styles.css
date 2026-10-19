@@ -111,3 +111,29 @@ button{font-family:inherit}
   .fila h3{font-size:1.2rem}
 }
 .mas[hidden]{display:none}
+
+/* ---- Vista de lectura ---- */
+body.leyendo{overflow:hidden}
+.lector{position:fixed;inset:0;z-index:50;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.lector[hidden]{display:none}
+.lector-bar{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:4px;padding:6px max(8px,env(safe-area-inset-left)) 6px;padding-top:max(6px,env(safe-area-inset-top));background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.lector-dep{flex:1;min-width:0;text-align:center;font-weight:600;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
+.lector-cuerpo{padding:18px 0 calc(40px + env(safe-area-inset-bottom))}
+.l-meta{margin:0;color:var(--sello);font-weight:600;font-size:.92rem}
+.l-titulo{margin:8px 0 0;font:600 1.4rem/1.3 var(--lectura);letter-spacing:-.005em;text-wrap:pretty}
+.l-copia{margin:14px 0 0;padding:10px 12px;border-radius:10px;background:var(--sello-suave);color:var(--ink);font-size:.88rem;line-height:1.45}
+.texto{margin-top:22px;font:400 1.08rem/1.65 var(--lectura);overflow-wrap:anywhere}
+.texto p{margin:0 0 .9em}
+.texto h3,.texto h4{font-family:var(--ui);font-weight:700;line-height:1.3;margin:1.4em 0 .5em}
+.texto h3{font-size:1.1rem}.texto h4{font-size:1rem}
+.texto ul,.texto ol{padding-left:1.3em}
+.texto .tabla{margin:1em -18px;padding:0 18px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.texto table{border-collapse:collapse;font:400 .86rem/1.4 var(--ui);min-width:100%}
+.texto td,.texto th{border:1px solid var(--line);padding:6px 8px;vertical-align:top;text-align:left}
+.texto th,.texto tr:first-child td{background:var(--surface);font-weight:600}
+.texto .pista{font:600 .82rem/1.3 var(--ui);color:var(--muted);margin:-.4em 0 1em}
+.l-aviso{font:500 .95rem/1.5 var(--ui);color:var(--muted)}
+.oficial{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:28px;min-height:52px;border-radius:12px;background:var(--sello);color:var(--bg);font-weight:700;text-decoration:none}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:.92rem;font-weight:600}
+.texto table{overflow-wrap:normal;word-break:normal;width:max-content;max-width:none}
+.texto td,.texto th{min-width:7ch;max-width:26ch}

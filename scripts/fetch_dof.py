@@ -13,6 +13,7 @@ Uso:
 """
 import argparse
 import html
+from html.parser import HTMLParser
 import json
 import re
 import sys
@@ -27,7 +28,8 @@ from zoneinfo import ZoneInfo
 BASE = "https://sidof.segob.gob.mx/dof/sidof"
 UA = "dof-sin-drama/1.0 (proyecto estudiantil; lectura diaria del sumario)"
 TZ = ZoneInfo("America/Mexico_City")
-MAX_DETALLES_POR_DIA = 60
+MAX_TEXTOS_POR_CORRIDA = 400
+_textos_pedidos = 0
 DIAS_EN_INDICE = 400
 DIAS_EN_BUSCADOR = 180
 
@@ -192,18 +194,85 @@ def limpiar_html(fragmento):
     return re.sub(r"\s+", " ", html.unescape(texto)).strip()
 
 
-def titulo_desde_detalle(cod):
-    """Para notas sin título en el índice: lo busca en el detalle de la nota."""
+class _Limpiador(HTMLParser):
+    """Deja solo etiquetas seguras de texto y tablas; quita estilos, scripts e imágenes."""
+    PERMITIDAS = {"p", "br", "b", "strong", "i", "em", "u", "sup", "sub", "ul", "ol", "li",
+                  "table", "thead", "tbody", "tfoot", "tr", "td", "th", "caption", "h1", "h2", "h3", "h4", "h5", "h6"}
+    RENOMBRAR = {"h1": "h3", "h2": "h3", "h3": "h4", "h4": "h4", "h5": "h4", "h6": "h4"}
+    VACIAS = {"br"}
+    IGNORAR = {"head", "title", "style", "script", "noscript"}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.out, self.ignorar, self.imagenes, self.abiertas = [], 0, False, []
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self.IGNORAR:
+            self.ignorar += 1
+            return
+        if self.ignorar:
+            return
+        if tag == "img":
+            self.imagenes = True
+            return
+        nuevo = self.RENOMBRAR.get(tag, tag)
+        if nuevo not in self.PERMITIDAS:
+            return
+        extra = ""
+        if nuevo in ("td", "th"):
+            for k, v in attrs:
+                if k in ("colspan", "rowspan") and v and v.isdigit() and int(v) < 100:
+                    extra += f' {k}="{v}"'
+        self.out.append(f"<{nuevo}{extra}>")
+        if nuevo not in self.VACIAS:
+            self.abiertas.append((tag, nuevo))
+
+    def handle_endtag(self, tag):
+        if tag in self.IGNORAR:
+            self.ignorar = max(0, self.ignorar - 1)
+            return
+        if self.ignorar:
+            return
+        for i in range(len(self.abiertas) - 1, -1, -1):
+            if self.abiertas[i][0] == tag:
+                for _, n in reversed(self.abiertas[i:]):
+                    self.out.append(f"</{n}>")
+                del self.abiertas[i:]
+                return
+
+    def handle_data(self, data):
+        if not self.ignorar:
+            self.out.append(html.escape(data, quote=False))
+
+    def resultado(self):
+        for _, n in reversed(self.abiertas):
+            self.out.append(f"</{n}>")
+        h = "".join(self.out)
+        h = re.sub(r"[ \t\r\n ]+", " ", h)
+        h = re.sub(r"<p>\s*</p>", "", h)
+        h = re.sub(r"<p>\s*<p>", "<p>", h)
+        h = re.sub(r"</p>\s*</p>", "</p>", h)
+        return h.strip()
+
+
+def limpiar_contenido(contenido):
+    lim = _Limpiador()
+    lim.feed(contenido or "")
+    lim.close()
+    return lim.resultado(), lim.imagenes
+
+
+def detalle(cod):
+    """Pide el detalle de una nota. Devuelve (titulo, html_limpio, tiene_imagenes)."""
     det = pedir_json(f"{BASE}/notas/nota/{cod}")
     nota = det.get("Nota") or {}
-    titulo = (nota.get("titulo") or "").strip()
-    if titulo and titulo != "null":
-        return titulo
     contenido = nota.get("cadenaContenido") or ""
-    m = re.search(r"<h1[^>]*>(.*?)</h1>", contenido, re.S | re.I)
-    if m and limpiar_html(m.group(1)):
-        return limpiar_html(m.group(1))
-    return ""
+    titulo = (nota.get("titulo") or "").strip()
+    if not titulo or titulo == "null":
+        m = re.search(r"<title[^>]*>(.*?)</title>", contenido, re.S | re.I)
+        titulo = limpiar_html(m.group(1)) if m else ""
+    cuerpo, imagenes = limpiar_contenido(contenido)
+    return titulo, cuerpo, imagenes
 
 
 def notas_del_dia(respuesta):
@@ -215,33 +284,51 @@ def notas_del_dia(respuesta):
     return salida
 
 
-def construir_notas(crudas, fecha, usar_detalles=True):
-    notas, detalles = [], 0
+def construir_notas(crudas, fecha, carpeta=None, usar_detalles=True):
+    global _textos_pedidos
+    notas = []
+    textos = carpeta / "notas" if carpeta else None
+    if textos:
+        textos.mkdir(parents=True, exist_ok=True)
     for edicion, c in crudas:
         cod = c.get("codNota")
         es_aviso = c.get("tipoNota") == "AVISO" or c.get("codOrgaUno") == "AV"
         titulo = (c.get("titulo") or "").strip()
         if titulo == "null":
             titulo = ""
-        if not titulo and not es_aviso and usar_detalles and detalles < MAX_DETALLES_POR_DIA:
-            detalles += 1
+        # Las entradas sin título y sin documento son encabezados de sección (nombre de la dependencia).
+        if not titulo and not es_aviso and c.get("existeDoc") == "N":
+            continue
+        ruta_texto = textos / f"{cod}.json" if textos else None
+        tiene_texto = bool(ruta_texto and ruta_texto.exists())
+        if not es_aviso and usar_detalles and textos and (not tiene_texto or not titulo) and _textos_pedidos < MAX_TEXTOS_POR_CORRIDA:
+            _textos_pedidos += 1
             time.sleep(0.4)
             try:
-                titulo = titulo_desde_detalle(cod)
+                t2, cuerpo, imagenes = detalle(cod)
+                titulo = titulo or t2
+                if cuerpo and len(re.sub(r"<[^>]+>", "", cuerpo)) > 40:
+                    ruta_texto.write_text(json.dumps({"id": cod, "html": cuerpo, "imagenes": imagenes},
+                                                     ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+                    tiene_texto = True
             except RuntimeError as e:
                 print(f"  aviso: sin detalle de {cod}: {e}", file=sys.stderr)
+        if not titulo and not es_aviso:
+            continue
         dep_largo = c.get("codOrgaDos") if c.get("codOrgaDos") not in (None, "null") else ""
         poder = c.get("nombreCodOrgaUno") or ""
         dep_texto = f"{poder} {dep_largo}"
         nota = {
             "id": cod,
-            "titulo": titulo or "Publicación sin título en el índice (ábrela para ver el texto)",
+            "titulo": titulo or "Aviso",
             "dep": nombre_bonito(dep_largo) or nombre_bonito(poder),
             "edicion": edicion,
             "pagina": c.get("pagina") or 0,
             "temas": clasificar(titulo, dep_texto, es_aviso),
             "url": f"https://dof.gob.mx/nota_detalle.php?codigo={cod}&fecha={fecha:%d/%m/%Y}",
         }
+        if tiene_texto:
+            nota["texto"] = True
         if es_aviso:
             nota["aviso"] = True
         notas.append(nota)
@@ -288,7 +375,8 @@ def reconstruir_indices(carpeta):
         dia = json.loads(ruta.read_text(encoding="utf-8"))
         for n in dia["notas"]:
             if not n.get("aviso"):
-                buscador.append({"f": dia["fecha"], "i": n["id"], "t": n["titulo"], "d": n["dep"], "tm": n["temas"]})
+                buscador.append({"f": dia["fecha"], "i": n["id"], "t": n["titulo"], "d": n["dep"], "tm": n["temas"]}
+                                | ({"x": 1} if n.get("texto") else {}))
     ahora = datetime.now(timezone.utc).isoformat(timespec="seconds")
     (carpeta / "index.json").write_text(
         json.dumps({"actualizado": ahora, "dias": dias}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
@@ -304,7 +392,7 @@ def procesar_dia(carpeta, fecha, respuesta, usar_detalles):
         print(f"{fecha}: sin publicaciones (fin de semana o aún no sale)")
         return False
     ediciones = {codigo: bool(respuesta.get(clave)) for clave, codigo in EDICIONES}
-    notas = construir_notas(crudas, fecha, usar_detalles)
+    notas = construir_notas(crudas, fecha, carpeta, usar_detalles)
     cambio = guardar_dia(carpeta, fecha, notas, ediciones)
     print(f"{fecha}: {len(notas)} publicaciones ({'actualizado' if cambio else 'sin cambios'})")
     return cambio

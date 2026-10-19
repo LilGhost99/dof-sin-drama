@@ -94,8 +94,14 @@
 
   function fila(n, iso, opciones = {}) {
     const art = el("article", { className: "fila" });
-    const a = el("a", { href: urlNota(n.id, iso), target: "_blank", rel: "noopener noreferrer", textContent: n.titulo });
-    a.setAttribute("aria-label", n.titulo + " (se abre el texto oficial en el DOF)");
+    const a = el("a", { textContent: n.titulo });
+    if (n.texto) {
+      a.href = `#n=${n.id}&f=${iso}`;
+      a.addEventListener("click", () => { estado.desdeLista = true; });
+    } else {
+      Object.assign(a, { href: urlNota(n.id, iso), target: "_blank", rel: "noopener noreferrer" });
+      a.setAttribute("aria-label", n.titulo + " (se abre el texto oficial en el DOF)");
+    }
     art.append(el("h3", {}, a));
     const meta = el("p", { className: "meta" });
     if (opciones.fecha) meta.append(el("span", { className: "fecha-hit", textContent: fechaDe(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" }) }));
@@ -107,7 +113,8 @@
       extra.forEach((x) => o.append(el("span", { textContent: temaPorId(x).label })));
       meta.append(o);
     }
-    const ext = el("span", { className: "ext" }); ext.innerHTML = "Texto oficial " + flecha;
+    const ext = el("span", { className: "ext" });
+    if (n.texto) ext.textContent = "Leer"; else ext.innerHTML = "En el DOF " + flecha;
     meta.append(ext);
     art.append(meta);
     if (n.resumen) {
@@ -146,7 +153,7 @@
       ? `${plural(hits.length, "resultado", "resultados")} en las últimas publicaciones${hits.length > 100 ? " (se muestran 100)" : ""}.`
       : "No hay resultados. Prueba con una sola palabra, por ejemplo “arancel”.";
     const sec = el("section", { className: "grupo" });
-    hits.slice(0, 100).forEach((h) => sec.append(fila({ id: h.i, titulo: h.t, dep: h.d, temas: h.tm }, h.f, { fecha: true })));
+    hits.slice(0, 100).forEach((h) => sec.append(fila({ id: h.i, titulo: h.t, dep: h.d, temas: h.tm, texto: !!h.x }, h.f, { fecha: true })));
     lista.append(sec);
   }
 
@@ -176,6 +183,66 @@
     }
   }
 
+
+  // ---- Vista de lectura ----
+  function aviso(msg) {
+    const t = el("div", { className: "toast", textContent: msg, role: "status" });
+    document.body.append(t); setTimeout(() => t.remove(), 2200);
+  }
+  function buscarNota(id, iso) {
+    if (estado.dia && estado.dia.fecha === iso) { const n = estado.dia.notas.find((x) => x.id === id); if (n) return n; }
+    const h = (estado.busq || []).find((x) => x.i === id);
+    return h ? { id, titulo: h.t, dep: h.d, temas: h.tm } : { id, titulo: "Publicación del DOF", dep: "", temas: [] };
+  }
+  async function abrirLector(id, iso) {
+    if (iso && (!estado.dia || estado.dia.fecha !== iso)) await cargarDia(iso);
+    const n = buscarNota(id, iso);
+    const lec = $("lector");
+    $("l-bar").textContent = n.dep || "Diario Oficial";
+    $("l-meta").textContent = [fechaDe(iso).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" }), n.pagina ? `pág. ${n.pagina}` : "", ED[n.edicion] ? `edición ${ED[n.edicion].toLowerCase()}` : ""].filter(Boolean).join(", ");
+    $("l-titulo").textContent = n.titulo;
+    $("l-oficial").href = urlNota(id, iso);
+    const caja = $("l-texto");
+    caja.replaceChildren(el("p", { className: "l-aviso", textContent: "Cargando el texto…" }));
+    lec.hidden = false; document.body.classList.add("leyendo"); lec.scrollTop = 0;
+    $("cerrar").focus({ preventScroll: true });
+    document.title = n.titulo.slice(0, 70) + " · El DOF sin drama";
+    try {
+      const t = await json(`data/notas/${id}.json`);
+      const tpl = document.createElement("template");
+      tpl.innerHTML = t.html; // HTML ya limpiado por el script (solo texto y tablas)
+      tpl.content.querySelectorAll("table").forEach((tb) => {
+        const w = el("div", { className: "tabla" }); tb.replaceWith(w); w.append(tb);
+        if (tb.querySelector("tr") && tb.querySelector("tr").children.length > 3) w.before(el("p", { className: "pista", textContent: "Desliza la tabla hacia los lados para ver todas las columnas." }));
+      });
+      caja.replaceChildren(tpl.content);
+      if (t.imagenes) caja.append(el("p", { className: "l-aviso", textContent: "Esta nota trae imágenes o gráficas que aquí no se muestran. Velas en el DOF oficial." }));
+    } catch {
+      caja.replaceChildren(el("p", { className: "l-aviso", textContent: "No tenemos el texto de esta nota. Ábrela en el DOF oficial." }));
+    }
+  }
+  function cerrarLector() {
+    $("lector").hidden = true; document.body.classList.remove("leyendo");
+    document.title = "El DOF sin drama";
+  }
+  function leerHash() {
+    const m = location.hash.match(/^#n=(\d+)&f=(\d{4}-\d{2}-\d{2})$/);
+    if (m) abrirLector(Number(m[1]), m[2]); else cerrarLector();
+  }
+  window.addEventListener("hashchange", leerHash);
+  $("cerrar").addEventListener("click", () => {
+    if (estado.desdeLista) { estado.desdeLista = false; history.back(); }
+    else { history.replaceState(null, "", location.pathname + location.search); cerrarLector(); }
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("lector").hidden) $("cerrar").click(); });
+  $("compartir").addEventListener("click", async () => {
+    const datos = { title: $("l-titulo").textContent, text: $("l-titulo").textContent + " (vía El DOF sin drama)", url: location.href };
+    try {
+      if (navigator.share) await navigator.share(datos);
+      else { await navigator.clipboard.writeText(location.href); aviso("Enlace copiado"); }
+    } catch { /* el usuario canceló */ }
+  });
+
   const mover = (delta) => { const d = fechaDe(estado.fecha); d.setDate(d.getDate() + delta); cargarDia(d.toISOString().slice(0, 10)); };
   const hoyCDMX = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Mexico_City" }).format(new Date());
 
@@ -196,6 +263,7 @@
       const inicial = dias.some((d) => d.f === hoy) ? hoy : (dias.length ? dias[dias.length - 1].f : hoy);
       $("act").textContent = "Última actualización: " + new Date(estado.idx.actualizado).toLocaleString("es-MX", { timeZone: "America/Mexico_City", dateStyle: "medium", timeStyle: "short" }) + " (CDMX).";
       await cargarDia(inicial);
+      if (location.hash.startsWith("#n=")) leerHash();
     } catch {
       estado.fecha = hoyCDMX(); pintarSello(null);
       $("estado").textContent = "Todavía no hay datos. En GitHub abre Actions y ejecuta “Actualizar DOF”.";
