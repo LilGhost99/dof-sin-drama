@@ -2,10 +2,13 @@ name: Actualizar DOF
 
 on:
   schedule:
-    - cron: "30 13 * * 1-6"
-    - cron: "0 15 * * 1-6"
-    - cron: "0 20 * * 1-6"
-    - cron: "0 2 * * 2-6"
+    # GitHub usa UTC. CDMX = UTC-6 (sin horario de verano).
+    # El DOF matutino sale entre 6 y 8 am: se revisa cada 20 min de 6:07 a 8:47.
+    # Minutos "raros" a propósito: GitHub retrasa o salta los horarios en :00 y :30.
+    - cron: "7,27,47 12-14 * * 1-6"   # 6:07 a 8:47 CDMX
+    - cron: "17 16 * * 1-6"           # 10:17 CDMX, por si se retrasó
+    - cron: "13 20 * * 1-6"           # 14:13 CDMX (vespertina)
+    - cron: "43 1 * * 2-6"            # 19:43 CDMX (vespertina tardía)
   workflow_dispatch:
     inputs:
       dias_atras:
@@ -39,5 +42,6 @@ jobs:
             echo "Sin cambios"
           else
             git commit -m "DOF: actualización"
+            git pull --rebase origin main
             git push
           fi
