@@ -10,17 +10,34 @@
   };
 
   const raiz = document.documentElement;
-  const g = store.get("dof-tema");
-  if (g === "dark" || g === "light") raiz.dataset.theme = g;
   const esOscuro = () => (raiz.dataset.theme ? raiz.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches);
   const metaTema = () => document.querySelector('meta[name="theme-color"]').setAttribute("content", esOscuro() ? "#11111C" : "#3A34C9");
-  metaTema();
-  $("tema").addEventListener("click", () => {
-    raiz.dataset.theme = esOscuro() ? "light" : "dark";
-    store.set("dof-tema", raiz.dataset.theme);
+
+  // ---- Ajustes: letra, tamaño y tema (se guardan en este celular) ----
+  let ajustes = { letra: "clasica", tam: "m", tema: "auto" };
+  try { ajustes = Object.assign(ajustes, JSON.parse(store.get("dof-ajustes") || "{}")); } catch { /* ajustes dañados */ }
+  const viejo = store.get("dof-tema"); if (viejo && !store.get("dof-ajustes")) ajustes.tema = viejo;
+  function aplicarAjustes() {
+    raiz.dataset.letra = ajustes.letra; raiz.dataset.tam = ajustes.tam;
+    if (ajustes.tema === "auto") delete raiz.dataset.theme; else raiz.dataset.theme = ajustes.tema;
     metaTema();
-    pintar();
-  });
+    document.querySelectorAll(".opciones").forEach((g) => g.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(ajustes[g.dataset.grupo] === b.dataset.v))));
+  }
+  aplicarAjustes();
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { metaTema(); if (estado.dia) pintar(); });
+  document.querySelectorAll(".opciones").forEach((g) => g.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    ajustes[g.dataset.grupo] = b.dataset.v;
+    store.set("dof-ajustes", JSON.stringify(ajustes));
+    aplicarAjustes();
+    if (g.dataset.grupo === "tema" && estado.dia) pintar();
+  }));
+  let focoAntes = null;
+  const abrirAjustes = () => { focoAntes = document.activeElement; $("ajustes").hidden = false; $("aj-listo").focus(); };
+  const cerrarAjustes = () => { $("ajustes").hidden = true; if (focoAntes) focoAntes.focus({ preventScroll: true }); };
+  document.querySelectorAll("[data-ajustes]").forEach((b) => b.addEventListener("click", abrirAjustes));
+  $("aj-listo").addEventListener("click", cerrarAjustes);
+  $("ajustes").addEventListener("click", (e) => { if (e.target === e.currentTarget) cerrarAjustes(); });
 
   const json = async (ruta) => { const r = await fetch(ruta, { cache: "no-cache" }); if (!r.ok) throw new Error(ruta + " " + r.status); return r.json(); };
   const el = (tag, props = {}, ...hijos) => { const n = Object.assign(document.createElement(tag), props); hijos.forEach((h) => n.append(h)); return n; };
@@ -49,6 +66,7 @@
     try { estado.dia = await json(`data/${iso}.json`); } catch { estado.dia = null; }
     estado.ed = "todas";
     estado.tema = "todos";
+    $("next").disabled = iso >= hoyCDMX();
     pintarSello(estado.dia ? estado.dia.notas.filter((n) => !n.aviso).length : 0);
     pintar();
   }
@@ -234,7 +252,10 @@
     if (estado.desdeLista) { estado.desdeLista = false; history.back(); }
     else { history.replaceState(null, "", location.pathname + location.search); cerrarLector(); }
   });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("lector").hidden) $("cerrar").click(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (!$("ajustes").hidden) cerrarAjustes(); else if (!$("lector").hidden) $("cerrar").click();
+  });
   $("compartir").addEventListener("click", async () => {
     const datos = { title: $("l-titulo").textContent, text: $("l-titulo").textContent + " (vía El DOF sin drama)", url: location.href };
     try {
@@ -243,12 +264,45 @@
     } catch { /* el usuario canceló */ }
   });
 
-  const mover = (delta) => { const d = fechaDe(estado.fecha); d.setDate(d.getDate() + delta); cargarDia(d.toISOString().slice(0, 10)); };
   const hoyCDMX = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Mexico_City" }).format(new Date());
+  async function mover(delta) {
+    const d = fechaDe(estado.fecha); d.setDate(d.getDate() + delta);
+    const iso = d.toISOString().slice(0, 10);
+    if (iso > hoyCDMX()) return;
+    await cargarDia(iso);
+    const l = $("lista"); l.classList.remove("entra-izq", "entra-der"); void l.offsetWidth;
+    l.classList.add(delta < 0 ? "entra-izq" : "entra-der");
+  }
+  // Deslizar a los lados para cambiar de día (no en la barra de temas ni en tablas)
+  let toque = null;
+  document.addEventListener("touchstart", (e) => {
+    const t = e.touches[0];
+    if (e.touches.length !== 1 || !$("lector").hidden || !$("ajustes").hidden) { toque = null; return; }
+    if (e.target.closest(".chips, .tabla, input, .abajo") || t.clientX < 28 || t.clientX > innerWidth - 28) { toque = null; return; }
+    toque = { x: t.clientX, y: t.clientY, t: Date.now() };
+  }, { passive: true });
+  document.addEventListener("touchend", (e) => {
+    if (!toque) return;
+    const t = e.changedTouches[0], dx = t.clientX - toque.x, dy = t.clientY - toque.y;
+    if (Math.abs(dx) > 70 && Math.abs(dy) < 45 && Date.now() - toque.t < 600) mover(dx > 0 ? -1 : 1);
+    toque = null;
+  }, { passive: true });
 
   $("prev").addEventListener("click", () => mover(-1));
   $("next").addEventListener("click", () => mover(1));
-  $("hoy").addEventListener("click", () => cargarDia(hoyCDMX()));
+  $("hoy").addEventListener("click", async () => {
+    const hoy = hoyCDMX();
+    const dias = (estado.idx && estado.idx.dias) || [];
+    const hay = dias.some((d) => d.f === hoy);
+    const destino = hay || !dias.length ? hoy : dias[dias.length - 1].f;
+    await cargarDia(destino);
+    if (!hay && destino !== hoy) aviso("El diario de hoy aún no sale. Te muestro el último publicado.");
+    scrollTo({ top: 0, behavior: "smooth" });
+  });
+  $("ir-buscar").addEventListener("click", () => {
+    const q = $("q"); q.focus({ preventScroll: true });
+    scrollTo({ top: Math.max(0, document.querySelector(".herramientas").offsetTop - 70), behavior: "smooth" });
+  });
   $("fecha").addEventListener("change", (e) => e.target.value && cargarDia(e.target.value));
   $("avisos").addEventListener("click", () => { estado.avisos = !estado.avisos; pintar(); });
   let t0;

@@ -1,4 +1,6 @@
 @font-face{font-family:"Bricolage";src:url(fonts/bricolage.woff2) format("woff2");font-weight:200 800;font-display:swap}
+@font-face{font-family:"Facil";src:url(fonts/atkinson-400.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Facil";src:url(fonts/atkinson-700.woff2) format("woff2");font-weight:700;font-display:swap}
 @font-face{font-family:"Serie";src:url(fonts/serif.woff2) format("woff2");font-weight:200 900;font-display:swap}
 
 :root{
@@ -20,7 +22,7 @@
 }
 
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;scroll-padding-top:64px}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:64px;font-size:calc(100% * var(--escala,1))}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 1rem/1.5 var(--ui);-webkit-font-smoothing:antialiased}
 .wrap{max-width:680px;margin:0 auto;padding:0 max(18px,env(safe-area-inset-left))}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -134,6 +136,64 @@ body.leyendo{overflow:hidden}
 .texto .pista{font:600 .82rem/1.3 var(--ui);color:var(--muted);margin:-.4em 0 1em}
 .l-aviso{font:500 .95rem/1.5 var(--ui);color:var(--muted)}
 .oficial{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:28px;min-height:52px;border-radius:12px;background:var(--sello);color:var(--bg);font-weight:700;text-decoration:none}
-.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:.92rem;font-weight:600}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));width:max-content;max-width:min(88vw,420px);text-align:center;transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:.92rem;font-weight:600}
 .texto table{overflow-wrap:normal;word-break:normal;width:max-content;max-width:none}
 .texto td,.texto th{min-width:7ch;max-width:26ch}
+
+/* ================= Ajustes de letra y tamaño ================= */
+:root[data-tam="s"]{--escala:.9}
+:root[data-tam="l"]{--escala:1.12}
+:root[data-tam="xl"]{--escala:1.25}
+:root[data-letra="moderna"]{--lectura:"Bricolage",system-ui,sans-serif}
+:root[data-letra="facil"]{--lectura:"Facil",Verdana,sans-serif;--ui:"Facil",Verdana,sans-serif}
+:root[data-letra="facil"] .texto,:root[data-letra="facil"] .fila h3{letter-spacing:.01em}
+.f-clasica{font-family:"Serie",Georgia,serif}.f-moderna{font-family:"Bricolage",sans-serif}.f-facil{font-family:"Facil",Verdana,sans-serif}
+
+/* ================= Cabecera compacta ================= */
+.masthead{padding:10px 0 14px}
+.logo{width:30px;height:30px;border-radius:8px}
+.aa{font:700 1.05rem/1 var(--ui);border:1.5px solid var(--line);border-radius:12px;width:48px}
+.masthead .sello{display:inline-block;margin-top:6px}
+.sello-borde{min-width:150px;padding:8px 18px 9px}
+.sello-dia{font-size:3.1rem}
+.sello-top{font-size:.9rem}
+.sello-mes{font-size:.92rem}
+.lema{margin-top:12px;font-size:.88rem;max-width:34ch}
+
+/* ================= Barra inferior ================= */
+body{padding-bottom:calc(68px + env(safe-area-inset-bottom))}
+.abajo{position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(5,1fr);
+  padding:4px max(6px,env(safe-area-inset-left)) calc(4px + env(safe-area-inset-bottom));
+  background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line)}
+.abajo button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:56px;border:0;background:none;color:var(--ink);font:600 .72rem/1 var(--ui);border-radius:12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.abajo button:active{background:var(--sello-suave)}
+.abajo svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.abajo #hoy{color:var(--sello)}
+.abajo button:disabled{opacity:.35}
+.aa-ico{font:800 1.1rem/24px var(--ui);height:24px}
+body.leyendo .abajo{display:none}
+@media (min-width:720px){.abajo{left:50%;right:auto;transform:translateX(-50%);width:min(520px,100%);bottom:14px;border:1px solid var(--line);border-radius:18px;padding-bottom:4px}}
+
+/* Animación al cambiar de día deslizando */
+@media (prefers-reduced-motion:no-preference){
+  .lista.entra-izq{animation:entraIzq .22s ease-out}.lista.entra-der{animation:entraDer .22s ease-out}
+  @keyframes entraIzq{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
+  @keyframes entraDer{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+}
+
+/* ================= Hoja de ajustes ================= */
+.hoja-fondo{position:fixed;inset:0;z-index:70;background:rgba(10,10,25,.45);display:flex;align-items:flex-end;justify-content:center}
+.hoja-fondo[hidden]{display:none}
+.hoja{width:min(560px,100%);max-height:88vh;overflow-y:auto;background:var(--bg);border-radius:20px 20px 0 0;padding:8px 18px calc(22px + env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(0,0,0,.18)}
+.hoja::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 10px}
+.hoja-cab{display:flex;align-items:center;justify-content:space-between}
+.hoja-cab h2{margin:0;font:700 1.15rem/1.2 var(--ui)}
+.listo{min-height:44px;padding:0 16px;border:0;border-radius:12px;background:var(--sello);color:var(--bg);font:700 .95rem var(--ui);cursor:pointer}
+.hoja fieldset{border:0;margin:18px 0 0;padding:0}
+.hoja legend{padding:0;margin-bottom:8px;font:600 .9rem var(--ui);color:var(--muted)}
+.opciones{display:grid;gap:8px}.opciones.tres{grid-template-columns:repeat(3,1fr)}.opciones.cuatro{grid-template-columns:repeat(4,1fr)}
+.opciones button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:56px;padding:8px 4px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:600 .82rem/1.15 var(--ui);cursor:pointer;text-align:center}
+.opciones button[aria-pressed=true]{border-color:var(--sello);background:var(--sello-suave);color:var(--sello)}
+.muestra{font-size:1.5rem;font-weight:700;line-height:1}
+.hoja-muestra{margin:20px 0 0;padding:14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font:500 1.12rem/1.45 var(--lectura)}
+.lector-bar .aa{width:44px;height:40px;font-size:.95rem}

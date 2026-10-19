@@ -7,10 +7,17 @@
 <meta name="description" content="Lo que salió hoy en el Diario Oficial de la Federación, ordenado por tema y con enlace al texto oficial. Gratis.">
 <meta name="theme-color" content="#3A34C9">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="DOF sin drama">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preload" href="fonts/bricolage.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/serif.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="styles.css?v=202610190057">
+<script>try{var a=JSON.parse(localStorage.getItem("dof-ajustes")||"{}");var r=document.documentElement;if(a.letra)r.dataset.letra=a.letra;if(a.tam)r.dataset.tam=a.tam;if(a.tema==="light"||a.tema==="dark")r.dataset.theme=a.tema}catch(e){}</script>
+<link rel="stylesheet" href="styles.css?v=202610190113">
 </head>
 <body>
 <a class="skip" href="#lista">Ir a las publicaciones</a>
@@ -18,28 +25,20 @@
 <header class="masthead">
   <div class="wrap">
     <div class="bar">
-      <p class="marca"><svg class="logo" width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="currentColor"/><g fill="none" stroke="var(--bg)" stroke-width="3"><circle cx="32" cy="32" r="21"/><circle cx="32" cy="32" r="17" stroke-width="1.5"/></g><text x="32" y="39" text-anchor="middle" font-weight="800" font-size="19" fill="var(--bg)">DOF</text></svg>El DOF sin drama</p>
-      <button id="tema" class="icono" type="button" aria-label="Cambiar entre modo claro y oscuro">
-        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 1 0 0 18V3z"/><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
-      </button>
+      <p class="marca"><img class="logo" src="icons/icon-192.png" width="30" height="30" alt="">El DOF sin drama</p>
+      <button class="icono aa" type="button" data-ajustes aria-label="Ajustes de letra y tema">Aa</button>
     </div>
-
-    <div class="fechabar">
-      <button id="prev" class="icono" type="button" aria-label="Día anterior"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      <label class="sello" id="sello">
-        <span class="sello-borde">
-          <span class="sello-top" id="s-top">—</span>
-          <span class="sello-dia" id="s-dia">—</span>
-          <span class="sello-mes" id="s-mes">—</span>
-          <span class="sello-n" id="s-n"></span>
-        </span>
-        <span class="sr">Elegir fecha</span>
-        <input id="fecha" type="date">
-      </label>
-      <button id="next" class="icono" type="button" aria-label="Día siguiente"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-    </div>
-    <p class="lema">Lo que salió en el Diario Oficial, ordenado por tema.</p>
-    <button id="hoy" class="enlace" type="button">Ir a hoy</button>
+    <label class="sello" id="sello">
+      <span class="sello-borde">
+        <span class="sello-top" id="s-top">—</span>
+        <span class="sello-dia" id="s-dia">—</span>
+        <span class="sello-mes" id="s-mes">—</span>
+        <span class="sello-n" id="s-n"></span>
+      </span>
+      <span class="sr">Elegir fecha</span>
+      <input id="fecha" type="date">
+    </label>
+    <p class="lema">Toca el sello para elegir fecha, o desliza a los lados para cambiar de día.</p>
   </div>
 </header>
 
@@ -68,6 +67,7 @@
   <div class="lector-bar">
     <button id="cerrar" class="icono" type="button" aria-label="Volver a la lista"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     <span id="l-bar" class="lector-dep"></span>
+    <button class="icono aa" type="button" data-ajustes aria-label="Ajustes de letra y tema">Aa</button>
     <button id="compartir" class="icono" type="button" aria-label="Compartir esta nota"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 15V3M7.5 7.5L12 3l4.5 4.5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   </div>
   <article class="lector-cuerpo">
@@ -87,6 +87,43 @@
     <p class="muted">Proyecto estudiantil, sin fines de lucro y sin relación con el Gobierno de México. <span id="act"></span></p>
   </div>
 </footer>
-<script src="app.js?v=202610190057"></script>
+<nav class="abajo" aria-label="Navegación">
+  <button id="prev" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span>Anterior</span></button>
+  <button id="hoy" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span>Hoy</span></button>
+  <button id="next" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg><span>Siguiente</span></button>
+  <button id="ir-buscar" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><span>Buscar</span></button>
+  <button type="button" data-ajustes><b class="aa-ico" aria-hidden="true">Aa</b><span>Letra</span></button>
+</nav>
+
+<div id="ajustes" class="hoja-fondo" hidden>
+  <section class="hoja" role="dialog" aria-modal="true" aria-labelledby="aj-titulo">
+    <div class="hoja-cab"><h2 id="aj-titulo">Letra y tema</h2><button id="aj-listo" class="listo" type="button">Listo</button></div>
+    <fieldset><legend>Tipo de letra</legend>
+      <div class="opciones tres" data-grupo="letra">
+        <button type="button" data-v="clasica"><span class="muestra f-clasica">Aa</span>Clásica</button>
+        <button type="button" data-v="moderna"><span class="muestra f-moderna">Aa</span>Moderna</button>
+        <button type="button" data-v="facil"><span class="muestra f-facil">Aa</span>Fácil de leer</button>
+      </div>
+    </fieldset>
+    <fieldset><legend>Tamaño</legend>
+      <div class="opciones cuatro" data-grupo="tam">
+        <button type="button" data-v="s"><span style="font-size:.85rem">A</span>Chica</button>
+        <button type="button" data-v="m"><span style="font-size:1.05rem">A</span>Normal</button>
+        <button type="button" data-v="l"><span style="font-size:1.3rem">A</span>Grande</button>
+        <button type="button" data-v="xl"><span style="font-size:1.55rem">A</span>Muy grande</button>
+      </div>
+    </fieldset>
+    <fieldset><legend>Tema</legend>
+      <div class="opciones tres" data-grupo="tema">
+        <button type="button" data-v="auto">Automático</button>
+        <button type="button" data-v="light">Claro</button>
+        <button type="button" data-v="dark">Oscuro</button>
+      </div>
+    </fieldset>
+    <p class="hoja-muestra">DECRETO por el que se modifica la Tarifa de la Ley de los Impuestos Generales de Importación y de Exportación.</p>
+  </section>
+</div>
+
+<script src="app.js?v=202610190113"></script>
 </body>
 </html>

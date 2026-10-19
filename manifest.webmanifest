@@ -1,1 +1,30 @@
-{"name":"El DOF sin drama","short_name":"DOF sin drama","start_url":".","display":"standalone","background_color":"#F6F6F9","theme_color":"#3A34C9","lang":"es","icons":[{"src":"favicon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]}
+{
+ "name": "El DOF sin drama",
+ "short_name": "DOF sin drama",
+ "start_url": ".",
+ "scope": ".",
+ "display": "standalone",
+ "background_color": "#F6F6F9",
+ "theme_color": "#3A34C9",
+ "lang": "es",
+ "icons": [
+  {
+   "src": "icons/icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icons/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icons/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}
