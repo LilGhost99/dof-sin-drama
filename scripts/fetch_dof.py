@@ -47,7 +47,7 @@ TEMAS = [
                 r"\bprosec\b", r"\baduan", r"\bimmex\b", r"padron de importadores",
                 r"tratado de libre comercio|\bt-?mec\b|\btlc", r"reglas? de origen|certificado de origen",
                 r"fraccion(es)? arancelaria", r"\bsalvaguarda", r"mercancias? (de procedencia )?extranjera",
-                r"\bpedimento", r"regimen(es)? aduanero"],
+                r"\bpedimento", r"regimen(es)? aduanero", r"recinto (portuario|fiscal)"],
      "dep": [r"agencia nacional de aduanas"]},
     {"id": "compras", "label": "Compras de gobierno", "color": "#B24A12", "color_dark": "#FF9A62",
      "titulo": [r"adquisiciones", r"licitacion", r"convocatoria", r"abstenerse de aceptar propuestas",
