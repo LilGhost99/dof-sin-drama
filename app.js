@@ -29,7 +29,7 @@
   const col = (t) => (esOscuro() ? t.color_dark : t.color);
   const plural = (n, a, b) => `${n} ${n === 1 ? a : b}`;
   const fechaDe = (iso) => new Date(iso + "T12:00:00");
-  const urlNota = (id, iso) => `https://www.dof.gob.mx/nota_detalle.php?codigo=${id}&fecha=${iso.slice(8)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+  const urlNota = (id, iso) => `https://dof.gob.mx/nota_detalle.php?codigo=${id}&fecha=${iso.slice(8)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
   const flecha = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   function pintarSello(total) {
@@ -94,7 +94,7 @@
 
   function fila(n, iso, opciones = {}) {
     const art = el("article", { className: "fila" });
-    const a = el("a", { href: n.url || urlNota(n.id, iso), target: "_blank", rel: "noopener noreferrer", textContent: n.titulo });
+    const a = el("a", { href: urlNota(n.id, iso), target: "_blank", rel: "noopener noreferrer", textContent: n.titulo });
     a.setAttribute("aria-label", n.titulo + " (se abre el texto oficial en el DOF)");
     art.append(el("h3", {}, a));
     const meta = el("p", { className: "meta" });

@@ -240,7 +240,7 @@ def construir_notas(crudas, fecha, usar_detalles=True):
             "edicion": edicion,
             "pagina": c.get("pagina") or 0,
             "temas": clasificar(titulo, dep_texto, es_aviso),
-            "url": f"https://www.dof.gob.mx/nota_detalle.php?codigo={cod}&fecha={fecha:%d/%m/%Y}",
+            "url": f"https://dof.gob.mx/nota_detalle.php?codigo={cod}&fecha={fecha:%d/%m/%Y}",
         }
         if es_aviso:
             nota["aviso"] = True
